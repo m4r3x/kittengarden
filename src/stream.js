@@ -1,14 +1,10 @@
-let receiveMessage = () => {
-}
+const measurements = require('./measurements')
+let receiveMessage
 
-function waitForNextMessageList() {
-    let messageBuffer = new Set()
+const waitForNextMessageList = async () => {
     return new Promise((resolve) => {
-        receiveMessage = (message) => {
-            messageBuffer.add(message)
-            if (messageBuffer.size === 1) {
-                resolve(messageBuffer)
-            }
+        receiveMessage = async (message) => {
+            resolve(message)
         }
     })
 }
@@ -20,35 +16,25 @@ async function* createMessageListStream() {
 }
 
 async function* createMessageStream() {
-    let messageListStream = createMessageListStream()
-    for await (let messageList of messageListStream) {
-        for (let message of messageList) {
-            yield message
-        }
+    for await (let messageList of createMessageListStream()) {
+        yield messageList
     }
 }
-
-
-let i = 0
-let lastTick = Date.now()
-const tickInterval = 1000
 
 async function startConsumingMessageStream() {
-    let messageStream = createMessageStream()
-    for await (let messages of messageStream) {
-        ++i
-        if (i % 1000 === 0) {
-            const now = Date.now()
-            process.stdout.write(`${tickInterval}req/${Math.abs(lastTick - now)}ms\n`)
-            i = 0
-            lastTick = now
-        }
+    for await (let messages of createMessageStream()) {
+        measurements.performance()
     }
 }
 
-startConsumingMessageStream()
+const main = async () => {
+    startConsumingMessageStream()
 
-setInterval(async () => {
-    receiveMessage('.')
-}, 0)
+    while (true) {
+        await receiveMessage(Math.random())
+    }
+}
+
+main()
+
 
